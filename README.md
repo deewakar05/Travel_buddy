@@ -15,7 +15,6 @@ The system is lightweight, privacy-focused, and built mainly using **open-source
 ## 🎯 Problem Statement
 
 When people travel together in different vehicles:
-
 * They lose track of each other easily
 * Frequent calls/messages distract drivers
 * Existing navigation apps focus on individuals, not groups
@@ -27,7 +26,6 @@ There is a need for a **simple, browser-based solution** that enables **real-tim
 ## 💡 Proposed Solution
 
 GroupDrive provides:
-
 * Private group creation
 * Join via shareable link
 * Role-based group management
@@ -39,129 +37,79 @@ No app installation is required — it works directly in a mobile browser.
 
 ---
 
-## 🎯 Objectives
-
-* Enable real-time location sharing among group members
-* Support group travel with multiple vehicles
-* Implement role-based permissions
-* Ensure user privacy and consent
-* Keep development and deployment cost minimal using open-source tools
-
----
-
-## 📦 Project Scope
-
-### ✅ In Scope (Beta Version)
-
-* Group creation and deletion
-* Join group via shareable link
-* Exit group at any time
-* Role-based access control (Admin, Route Planner, Member)
-* Live GPS location tracking
-* Real-time map updates
-* Start / Stop location sharing
-* Temporary data storage for trips
-
-### ❌ Out of Scope (Beta Version)
-
-* Login / Signup system
-* Persistent user profiles
-* Chat or messaging
-* Payments
-* AI-based route optimization
-* Native mobile applications
-
----
-
-## 👥 User Roles & Permissions
-
-### 👑 Admin
-
-* Creates the group
-* Shares group link
-* Assigns roles
-* Removes members
-* Ends the trip for all members
-
-### 🗺️ Route Planner
-
-* Views all live locations
-* Helps with route and navigation decisions
-* Can share the group link (optional permission)
-
-### 👤 Member
-
-* Joins the group
-* Shares live location
-* Views other members’ locations
-* Can exit the group anytime
-
-### 🔐 Permission Matrix
-
-| Action              | Admin | Route Planner | Member |
-| ------------------- | ----- | ------------- | ------ |
-| Join group          | ✔️    | ✔️            | ✔️     |
-| Share live location | ✔️    | ✔️            | ✔️     |
-| View live map       | ✔️    | ✔️            | ✔️     |
-| Share group link    | ✔️    | ✔️            | ❌      |
-| Assign roles        | ✔️    | ❌             | ❌      |
-| Remove member       | ✔️    | ❌             | ❌      |
-| End trip            | ✔️    | ❌             | ❌      |
-| Exit group          | ✔️    | ✔️            | ✔️     |
-
----
-
-## 🏗️ System Architecture (High Level)
-
-1. User opens the web application
-2. User creates or joins a group via link
-3. Browser requests GPS permission
-4. Location is fetched using Geolocation API
-5. Location data is sent to backend server
-6. Backend broadcasts updates using WebSockets
-7. All group members see updated locations on the shared map
-
----
-
 ## 🛠️ Technology Stack
 
 ### Frontend
-
 * HTML5
-* CSS3 / Tailwind CSS
-* JavaScript / React.js
-* Leaflet.js (map rendering)
+* CSS3 / **Tailwind CSS**
+* Vanilla **JavaScript**
+* **Leaflet.js** (Map rendering)
+* **Browser Geolocation API** & SockJS / STOMP
 
-### Backend (Java + Maven)
-
-* Java 17+
-* Spring Boot
-* Spring Web (REST APIs)
-* Spring WebSocket (real-time communication)
-* Maven (build & dependency management)
-
-### Maps & GPS
-
-* Browser Geolocation API
-* OpenStreetMap
+### Backend 
+* **Java 17 / 25**
+* **Spring Boot**
+* **Spring Web** (REST APIs)
+* **Spring WebSocket** (Real-time broadcasting via STOMP)
+* **Maven** (Build & dependency management)
 
 ### Database
-
-* H2 (in-memory, beta)
-* MongoDB (optional, future)
+* **H2** (In-memory database for beta)
 
 ### Deployment
+* **Render** (via Multi-stage **Docker** build)
+* **Netlify / Vercel / GitHub Pages** (Frontend)
 
-* Render / Railway (Spring Boot backend)
-* Netlify / Vercel (Frontend)
-* HTTPS via hosting platform or ngrok (during development)
+---
+
+## 💻 How to Run Locally
+
+### 1. Start the Backend
+1. Ensure you have Java 17+ and Maven installed.
+2. Navigate to the `backend` directory:
+   ```bash
+   cd backend
+   ```
+3. Run the Spring Boot application:
+   ```bash
+   mvn spring-boot:run
+   ```
+   *The backend will start on `http://localhost:8080`.*
+
+### 2. Start the Frontend
+1. Navigate to the `frontend` directory:
+   ```bash
+   cd frontend
+   ```
+2. Serve the static files using any local HTTP server. For example, using Python:
+   ```bash
+   python -m http.server 3000
+   ```
+3. Open `http://localhost:3000` in your web browser.
+
+---
+
+## 🐳 How to Deploy on Render
+
+The backend is fully Dockerized and ready for 1-click deployment on Render.
+
+1. Create an account on [Render.com](https://render.com).
+2. Click **New > Web Service**.
+3. Choose **Build and deploy from a Git repository**.
+4. Connect this repository to Render.
+5. In the settings:
+   - **Name**: `groupdrive-api`
+   - **Runtime**: `Docker` (Render automatically detects the provided `Dockerfile`)
+   - **Instance Type**: `Free`
+6. Click **Create Web Service**.
+
+> **Note**: After the backend is successfully deployed, update the `SOCKET_URL` variable inside `frontend/js/socket.js` to point to your new public Render backend URL (e.g. `https://groupdrive-api.onrender.com/ws`) instead of `localhost`. Then, deploy the frontend using GitHub Pages, Vercel, or Netlify.
 
 ---
 
 ## 🗂️ Data Model Design
 
 ### Group
-
 ```
 groupId
 groupName
@@ -171,9 +119,9 @@ isActive
 ```
 
 ### Member
-
 ```
 memberId
+groupId
 name
 role (ADMIN / ROUTE_PLANNER / MEMBER)
 latitude
@@ -181,28 +129,6 @@ longitude
 isSharing
 lastUpdated
 ```
-
----
-
-## ⚙️ Functional Requirements
-
-* System shall allow users to create a group
-* System shall generate a unique join link
-* System shall allow users to join via link
-* System shall fetch live GPS coordinates
-* System shall update locations every 3–5 seconds
-* System shall show all group members on a shared map
-* System shall allow users to exit group anytime
-
----
-
-## ⚡ Non-Functional Requirements
-
-* Real-time updates within 5 seconds
-* Mobile browser compatibility
-* HTTPS required for GPS access
-* Low battery consumption
-* Secure and private group access
 
 ---
 
@@ -216,110 +142,45 @@ lastUpdated
 
 ---
 
-## 🧩 Development Phases
-
-| Phase   | Description                      |
-| ------- | -------------------------------- |
-| Phase 0 | Requirement & scope finalization |
-| Phase 1 | UI/UX design                     |
-| Phase 2 | Frontend development             |
-| Phase 3 | Map & GPS integration            |
-| Phase 4 | Backend APIs                     |
-| Phase 5 | Real-time location sharing       |
-| Phase 6 | Privacy & controls               |
-| Phase 7 | Testing                          |
-| Phase 8 | Deployment                       |
-
----
-
-## 💰 Cost Estimation (Beta)
-
-| Component           | Cost            |
-| ------------------- | --------------- |
-| Development tools   | ₹0              |
-| Maps & APIs         | ₹0              |
-| Hosting (free tier) | ₹0              |
-| Domain (optional)   | ₹700 – ₹1,200   |
-| **Total**           | **₹0 – ₹1,200** |
-
----
-
-## ✅ Advantages
-
-* No app installation required
-* Real-time group coordination
-* Simple and intuitive interface
-* Cost-effective and scalable
-* Ideal for group travel and convoys
-
----
-
-## ⚠️ Limitations
-
-* Requires internet connectivity
-* GPS accuracy depends on device
-* Battery usage during long trips
-
----
-
-## 🚀 Future Enhancements
-
-* Route sharing and navigation
-* Group chat
-* SOS / emergency alert
-* Native mobile application
-* AI-based convoy optimization
-
----
-
 ## 🧠 Technical Blueprint
 
 ### Backend Structure
-
 ```
-server/
-├── index.js
-├── socket.js
-├── routes/
-│   └── groupRoutes.js
-├── models/
-│   ├── Group.js
-│   └── Member.js
-└── utils/
-    └── idGenerator.js
+backend/
+├── pom.xml
+└── src/main/java/com/groupdrive/
+    ├── GroupDriveApplication.java
+    ├── config/ WebSocketConfig.java
+    ├── controller/ GroupController.java, LocationController.java
+    ├── dto/ CreateGroupRequest.java, JoinGroupRequest.java, etc.
+    ├── model/ Group.java, Member.java
+    ├── repository/ GroupRepository.java, MemberRepository.java
+    ├── service/ GroupService.java
+    └── util/ IdGenerator.java
 ```
 
 ### Frontend Structure
-
 ```
-client/
+frontend/
 ├── index.html
 ├── create-group.html
 ├── join-group.html
 ├── map.html
-├── css/
-├── js/
-│   ├── map.js
-│   ├── socket.js
-│   └── gps.js
+└── js/
+    ├── map.js
+    ├── socket.js
+    └── gps.js
 ```
 
 ### Real-Time Flow
-
 ```
-GPS → Browser → WebSocket → Server
-Server → Broadcast → Group Members
-Map → Marker Update → Live View
+GPS → Browser → STOMP WebSocket → Spring Boot Server
+Server → Broadcast → Subscribed Group Members
+Map (Leaflet) → Marker Update → Live View
 ```
-
----
-
-## 🏁 Conclusion
-
-GroupDrive provides a practical, real-world solution for real-time group travel coordination. By leveraging modern web technologies and real-time communication, it enables safe, efficient, and cost-effective live location sharing without requiring mobile app installation.
 
 ---
 
 ## 📄 License
 
-This project is intended for educational and prototype purposes. License can be added as required.
+This project is intended for educational and prototype purposes.

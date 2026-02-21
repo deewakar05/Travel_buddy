@@ -75,7 +75,13 @@ public class GroupService {
         member.setMemberId(memberId);
         member.setGroupId(group.getGroupId());
         member.setName(request.getMemberName());
-        member.setRole("MEMBER");
+        // Smart Role Assignment: Second participant becomes ROUTE_PLANNER
+        List<Member> existingMembers = memberRepository.findByGroupId(group.getGroupId());
+        if (existingMembers.size() == 1) {
+            member.setRole("ROUTE_PLANNER");
+        } else {
+            member.setRole("MEMBER");
+        }
         member.setSharing(false);
         String memberToken = UUID.randomUUID().toString();
         member.setMemberToken(memberToken);

@@ -14,6 +14,10 @@ if (!groupId || !memberId) {
 }
 
 // Ensure the UI shows the group ID and member info
+const groupName = sessionStorage.getItem('groupName');
+if (groupName) {
+    document.getElementById('groupNameLabel').textContent = groupName;
+}
 document.getElementById('groupIdLabel').textContent = `ID: ${groupId}`;
 document.getElementById('userNameLabel').textContent = memberName;
 const role = sessionStorage.getItem('role') || 'MEMBER';

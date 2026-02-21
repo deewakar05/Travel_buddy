@@ -80,7 +80,7 @@ function toggleSharing(start) {
 
         // Inform backend we stopped
         if (typeof sendLocationUpdate === "function") {
-            sendLocationUpdate(null, null, "STOPPED");
+            sendLocationUpdate(null, null, "OFFLINE");
         }
     }
 }

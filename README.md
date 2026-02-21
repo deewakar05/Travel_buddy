@@ -26,12 +26,23 @@ There is a need for a **simple, browser-based solution** that enables **real-tim
 ## 💡 Proposed Solution
 
 GroupDrive provides:
-* Private group creation
-* Join via shareable link
-* Role-based group management
-* Live GPS location sharing
-* Shared real-time map view
-* Easy exit and stop-sharing controls
+
+### ✅ In Scope (Beta Version)
+
+* Group creation and deletion
+* Join group via shareable link
+* Exit group at any time
+* Role-based access control (Admin, Route Planner, Member)
+* Live GPS location tracking
+* Real-time map updates
+* Start / Stop location sharing
+* Temporary data storage for trips
+
+### ✨ Advanced Features (New!)
+
+* **Leader / Convoy Mode**: Displays distance to the group leader and warns users if they are falling behind (> 1km).
+* **Smart Stop Alerts**: Automatically notifies the entire group if a member has been stopped for more more than 3 minutes.
+* **Temporary Trip History**: Draws a dotted breadcrumb path showing the last 15 minutes of travel history for every active member.
 
 No app installation is required — it works directly in a mobile browser.
 

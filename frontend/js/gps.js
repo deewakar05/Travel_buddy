@@ -2,6 +2,9 @@
 
 let watchId = null;
 let isSharing = false;
+let lastKnownLocation = null;
+let lastMoveTime = Date.now();
+let stopAlertSent = false;
 
 const toggleBtn = document.getElementById('toggleSharingBtn');
 const toggleKnob = document.getElementById('toggleKnob');
@@ -53,11 +56,14 @@ function toggleSharing(start) {
             {
                 enableHighAccuracy: true,
                 timeout: 10000,
-                maximumAge: 0
+                maximumAge: 5000 // Accept positions up to 5s old
             }
         );
         isSharing = true;
         toggleVisualState(true);
+
+        // Start checking for stops every 10 seconds
+        setInterval(checkStopAlert, 10000);
 
     } else if (!start && isSharing) {
         // Stop watching
@@ -79,16 +85,61 @@ function toggleSharing(start) {
     }
 }
 
+// Check if stopped for > 3 minutes (180,000 ms)
+function checkStopAlert() {
+    if (!isSharing || !lastKnownLocation) return;
+
+    const now = Date.now();
+    const timeSinceLastMove = now - lastMoveTime;
+
+    if (timeSinceLastMove > 180000 && !stopAlertSent) {
+        console.log("User stopped for > 3 mins. Sending STOPPED status.");
+        stopAlertSent = true;
+        if (typeof sendLocationUpdate === "function") {
+            sendLocationUpdate(lastKnownLocation.lat, lastKnownLocation.lng, "STOPPED");
+        }
+    }
+}
+
+// Helper to calculate distance in meters
+function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // metres
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) *
+        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
 // GPS Success
 function successCallback(position) {
     const lat = position.coords.latitude;
     const lng = position.coords.longitude;
 
-    console.log(`GPS Update: Lat ${lat}, Lng ${lng}`);
+    // Check if we moved significantly (e.g. > 10 meters)
+    if (lastKnownLocation) {
+        const distance = calculateDistanceMeters(lat, lng, lastKnownLocation.lat, lastKnownLocation.lng);
+        if (distance > 10) {
+            lastMoveTime = Date.now(); // Reset the stop timer
+            stopAlertSent = false;
+        }
+    } else {
+        lastMoveTime = Date.now();
+    }
+
+    lastKnownLocation = { lat, lng };
+
+    console.log(`GPS Update: Lat ${lat}, Lng ${lng}. Status: ${stopAlertSent ? 'STOPPED' : 'SHARING'}`);
 
     // Broadcast via WebSockets
     if (typeof sendLocationUpdate === "function") {
-        sendLocationUpdate(lat, lng, "SHARING");
+        sendLocationUpdate(lat, lng, stopAlertSent ? "STOPPED" : "SHARING");
     }
 }
 

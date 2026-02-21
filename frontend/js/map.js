@@ -2,6 +2,9 @@
 
 let map;
 let markers = {}; // Store markers by memberId
+let paths = {}; // Store polyline histories by memberId
+let historyPoints = {}; // Store array of latlngs by memberId
+let leaderMarkerId = null; // Store who the leader is
 let isFollowingUser = true; // Auto-center mode
 
 // Default coordinates (e.g. center of US or India, will update when GPS locks)
@@ -58,6 +61,47 @@ function createIcon(name, isSelf) {
     });
 }
 
+// Show a temporary toast notification
+function showStopAlert(memberName) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium animate-bounce ease-in-out';
+    toast.innerHTML = `⚠️ <b>${memberName}</b> has stopped!`;
+
+    container.appendChild(toast);
+
+    // Remove after 5 seconds
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Logic to check distance to leader
+function updateLeaderDistance(myLatLng) {
+    if (!leaderMarkerId || leaderMarkerId === memberId || !markers[leaderMarkerId] || !myLatLng) {
+        document.getElementById('leaderHud').classList.add('hidden');
+        return;
+    }
+
+    const leaderLatLng = markers[leaderMarkerId].getLatLng();
+    const myPos = L.latLng(myLatLng[0], myLatLng[1]);
+    const distanceMeters = myPos.distanceTo(leaderLatLng);
+
+    const hud = document.getElementById('leaderHud');
+    const distText = document.getElementById('leaderDistance');
+    const warningText = document.getElementById('leaderWarning');
+
+    hud.classList.remove('hidden');
+
+    if (distanceMeters > 1000) {
+        distText.textContent = (distanceMeters / 1000).toFixed(1) + ' km';
+        warningText.classList.remove('hidden');
+    } else {
+        distText.textContent = Math.round(distanceMeters) + ' m';
+        warningText.classList.add('hidden');
+    }
+}
+
 // Called by socket.js when a location update is received
 function updateMemberOnMap(update) {
     if (!update.latitude || !update.longitude) return;
@@ -65,9 +109,44 @@ function updateMemberOnMap(update) {
     const latLng = [update.latitude, update.longitude];
     const isSelf = update.memberId === memberId;
 
+    // Determine Leader Activity
+    if (update.role === 'ADMIN') {
+        leaderMarkerId = update.memberId;
+    }
+
+    // Trigger Stop Alert Toast (Ensure we only show it once per stop by checking a local flag)
+    if (update.status === 'STOPPED' && (!markers[update.memberId] || !markers[update.memberId].isStopped)) {
+        showStopAlert(update.memberName);
+    }
+
+    // --- Temporary Trip History Buffer ---
+    if (!historyPoints[update.memberId]) historyPoints[update.memberId] = [];
+
+    // Only add point if it moved significantly to save memory/processing (> 5 meters)
+    const pts = historyPoints[update.memberId];
+    if (pts.length === 0 || L.latLng(pts[pts.length - 1]).distanceTo(L.latLng(latLng)) > 5) {
+        pts.push(latLng);
+        if (pts.length > 180) pts.shift(); // Max 15 mins (180 points * 5s)
+    }
+
+    // Update Polyline
+    const pathColor = isSelf ? '#3b82f6' : '#94a3b8';
+    if (!paths[update.memberId]) {
+        paths[update.memberId] = L.polyline(pts, {
+            color: pathColor,
+            weight: 3,
+            dashArray: '5, 10',
+            opacity: 0.6
+        }).addTo(map);
+    } else {
+        paths[update.memberId].setLatLngs(pts);
+    }
+    // -------------------------------------
+
     if (markers[update.memberId]) {
         // Update existing marker
         markers[update.memberId].setLatLng(latLng);
+        markers[update.memberId].isStopped = (update.status === 'STOPPED');
 
         // Auto-center map if following self
         if (isSelf && isFollowingUser) {
@@ -80,6 +159,8 @@ function updateMemberOnMap(update) {
             zIndexOffset: isSelf ? 1000 : 0
         }).addTo(map);
 
+        marker.isStopped = (update.status === 'STOPPED');
+
         // Add popup
         marker.bindPopup(`<b>${update.memberName}</b><br/>Role: ${update.role || 'Member'}`);
         markers[update.memberId] = marker;
@@ -91,11 +172,17 @@ function updateMemberOnMap(update) {
             document.getElementById('statusLabel').classList.remove("text-slate-500");
             document.getElementById('statusLabel').classList.add("text-green-600");
 
-            // Set toggle to ON visually initially
             if (!document.getElementById('toggleKnob').classList.contains('translate-x-7')) {
                 toggleVisualState(true);
             }
         }
+    }
+
+    // Update the Leader HUD distance if we have both points
+    if (isSelf) {
+        updateLeaderDistance(latLng);
+    } else if (leaderMarkerId === update.memberId && markers[memberId]) {
+        updateLeaderDistance([markers[memberId].getLatLng().lat, markers[memberId].getLatLng().lng]);
     }
 }
 
@@ -104,6 +191,11 @@ function removeMemberFromMap(exitMemberId) {
     if (markers[exitMemberId]) {
         map.removeLayer(markers[exitMemberId]);
         delete markers[exitMemberId];
+    }
+    if (paths[exitMemberId]) {
+        map.removeLayer(paths[exitMemberId]);
+        delete paths[exitMemberId];
+        delete historyPoints[exitMemberId];
     }
 }
 

@@ -73,9 +73,9 @@
                 </div>
             </div>
 
-            <!-- Share Button (Visible only to Admin/Route Planner usually, keeping visible for Beta) -->
+            <!-- Share Button -->
             <button onclick="copyGroupLink()"
-                class="bg-blue-600 shadow-lg shadow-blue-600/30 text-white p-3 rounded-2xl hover:bg-blue-700 transition-colors active:scale-95 flex items-center justify-center">
+                class="bg-blue-600 shadow-lg shadow-blue-600/30 text-white p-3 rounded-2xl hover:bg-blue-700 transition-colors flex items-center justify-center">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -83,6 +83,26 @@
             </button>
 
         </div>
+
+        <!-- Leader HUD -->
+        <div id="leaderHud"
+            class="hidden max-w-md mx-auto mt-2 bg-slate-900/80 backdrop-blur text-white px-4 py-2 rounded-xl flex items-center justify-between text-sm">
+            <div class="flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                </span>
+                <span>Distance to Leader: <b id="leaderDistance">--</b></span>
+            </div>
+            <span id="leaderWarning" class="text-red-400 font-bold hidden">Falling behind!</span>
+        </div>
+
+        <!-- Stop Alert Toast Container -->
+        <div id="toastContainer" class="max-w-md mx-auto mt-2 space-y-2 flex flex-col items-center">
+            <!-- Toasts will be injected here dynamically -->
+        </div>
+
     </header>
 
     <!-- The Map Container -->

@@ -33,6 +33,42 @@ function initMap() {
         document.getElementById('recenterBtn').classList.remove('bg-blue-100', 'text-blue-700');
         document.getElementById('recenterBtn').classList.add('bg-slate-100', 'text-slate-700');
     });
+    // Initialize the map
+    document.getElementById('memberCountLabel').textContent = "1 Member";
+
+    // Fetch existing members
+    fetchGroupMembers();
+}
+
+// Fetch all members of the group to sync initial state
+async function fetchGroupMembers() {
+    try {
+        const response = await fetch(`http://localhost:8080/api/groups/${groupId}/members`);
+        if (!response.ok) throw new Error('Failed to fetch members');
+
+        const members = await response.json();
+        members.forEach(m => {
+            // We only map members who have a location
+            if (m.latitude && m.longitude) {
+                updateMemberOnMap({
+                    memberId: m.memberId,
+                    memberName: m.name,
+                    role: m.role,
+                    latitude: m.latitude,
+                    longitude: m.longitude,
+                    status: 'SHARING' // Assume sharing if they have coordinates
+                });
+            }
+        });
+        updateMemberCount();
+    } catch (err) {
+        console.error("Initial member sync failed:", err);
+    }
+}
+
+function updateMemberCount() {
+    const count = Object.keys(markers).length;
+    document.getElementById('memberCountLabel').textContent = `${count} ${count === 1 ? 'Member' : 'Members'}`;
 }
 
 // Recenter Button Logic
@@ -165,6 +201,8 @@ function updateMemberOnMap(update) {
         marker.bindPopup(`<b>${update.memberName}</b><br/>Role: ${update.role || 'Member'}`);
         markers[update.memberId] = marker;
 
+        updateMemberCount();
+
         // If it's the first time we get our own lock, zoom in
         if (isSelf) {
             map.setView(latLng, 15);
@@ -197,6 +235,7 @@ function removeMemberFromMap(exitMemberId) {
         delete paths[exitMemberId];
         delete historyPoints[exitMemberId];
     }
+    updateMemberCount();
 }
 
 // Initialize map on load

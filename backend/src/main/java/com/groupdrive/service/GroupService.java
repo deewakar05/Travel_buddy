@@ -14,7 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import com.groupdrive.dto.MemberResponse;
 
 @Service
 public class GroupService {
@@ -86,5 +89,18 @@ public class GroupService {
                 member.getName(),
                 member.getRole(),
                 memberToken);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MemberResponse> getGroupMembers(String groupId) {
+        return memberRepository.findByGroupId(groupId).stream()
+                .map(m -> new MemberResponse(
+                        m.getMemberId(),
+                        m.getName(),
+                        m.getRole(),
+                        m.getLatitude(),
+                        m.getLongitude(),
+                        m.isSharing()))
+                .collect(Collectors.toList());
     }
 }

@@ -4,7 +4,9 @@ import com.groupdrive.dto.CreateGroupRequest;
 import com.groupdrive.dto.GroupResponse;
 import com.groupdrive.dto.JoinGroupRequest;
 import com.groupdrive.dto.JoinResponse;
+import com.groupdrive.dto.MemberResponse;
 import com.groupdrive.service.GroupService;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,5 +38,10 @@ public class GroupController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/{groupId}/members")
+    public ResponseEntity<List<MemberResponse>> getGroupMembers(@PathVariable String groupId) {
+        return ResponseEntity.ok(groupService.getGroupMembers(groupId));
     }
 }

@@ -1,6 +1,7 @@
 package com.groupdrive.controller;
 
 import com.groupdrive.dto.LocationUpdate;
+import com.groupdrive.dto.BroadcastUpdate;
 import com.groupdrive.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -47,9 +48,18 @@ public class LocationController {
             member.setLastUpdated(LocalDateTime.now());
             memberRepository.save(member);
 
-            // Only broadcast the update if authentication passed
+            // Construct safe broadcast DTO (no token)
+            BroadcastUpdate broadcast = new BroadcastUpdate(
+                    update.getGroupId(),
+                    member.getMemberId(),
+                    member.getName(),
+                    member.getRole(),
+                    member.getLatitude(),
+                    member.getLongitude(),
+                    update.getStatus());
+
             String destination = "/topic/group/" + update.getGroupId();
-            messagingTemplate.convertAndSend(destination, update);
+            messagingTemplate.convertAndSend(destination, broadcast);
         });
 
         // Broadcast logic moved inside the ifPresent block to ensure it only happens

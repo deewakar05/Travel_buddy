@@ -6,16 +6,19 @@ public class JoinResponse {
     private String memberId;
     private String memberName;
     private String role;
+    private String memberToken;
 
     public JoinResponse() {
     }
 
-    public JoinResponse(String groupId, String groupName, String memberId, String memberName, String role) {
+    public JoinResponse(String groupId, String groupName, String memberId, String memberName, String role,
+            String memberToken) {
         this.groupId = groupId;
         this.groupName = groupName;
         this.memberId = memberId;
         this.memberName = memberName;
         this.role = role;
+        this.memberToken = memberToken;
     }
 
     public String getGroupId() {
@@ -56,5 +59,13 @@ public class JoinResponse {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getMemberToken() {
+        return memberToken;
+    }
+
+    public void setMemberToken(String memberToken) {
+        this.memberToken = memberToken;
     }
 }

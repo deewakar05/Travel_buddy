@@ -26,6 +26,17 @@ public class LocationController {
 
         // Update the member's location in the database
         memberRepository.findByMemberId(update.getMemberId()).ifPresent(member -> {
+
+            // --- AUTHENTICATION CHECK ---
+            // If the incoming DTO has no token, or the token doesn't match the DB, reject
+            // it.
+            if (update.getMemberToken() == null || !update.getMemberToken().equals(member.getMemberToken())) {
+                System.out.println(
+                        "Unauthorized location spoofing attempt blocked for memberId: " + member.getMemberId());
+                return; // Silently drop unauthorized updates
+            }
+            // ----------------------------
+
             if ("SHARING".equals(update.getStatus())) {
                 member.setLatitude(update.getLatitude());
                 member.setLongitude(update.getLongitude());
@@ -35,10 +46,13 @@ public class LocationController {
             }
             member.setLastUpdated(LocalDateTime.now());
             memberRepository.save(member);
+
+            // Only broadcast the update if authentication passed
+            String destination = "/topic/group/" + update.getGroupId();
+            messagingTemplate.convertAndSend(destination, update);
         });
 
-        // Broadcast the update to all subscribers of this specific group
-        String destination = "/topic/group/" + update.getGroupId();
-        messagingTemplate.convertAndSend(destination, update);
+        // Broadcast logic moved inside the ifPresent block to ensure it only happens
+        // for valid tokens.
     }
 }

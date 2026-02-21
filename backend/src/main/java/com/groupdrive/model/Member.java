@@ -20,6 +20,9 @@ public class Member {
     @Column(nullable = false)
     private String role; // ADMIN, ROUTE_PLANNER, MEMBER
 
+    @Column(nullable = false)
+    private String memberToken;
+
     // Using Double for precise GPS coordinates
     private Double latitude;
     private Double longitude;
@@ -32,12 +35,14 @@ public class Member {
     public Member() {
     }
 
-    public Member(String memberId, String groupId, String name, String role, Double latitude, Double longitude,
+    public Member(String memberId, String groupId, String name, String role, String memberToken, Double latitude,
+            Double longitude,
             boolean isSharing, LocalDateTime lastUpdated) {
         this.memberId = memberId;
         this.groupId = groupId;
         this.name = name;
         this.role = role;
+        this.memberToken = memberToken;
         this.latitude = latitude;
         this.longitude = longitude;
         this.isSharing = isSharing;
@@ -74,6 +79,14 @@ public class Member {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getMemberToken() {
+        return memberToken;
+    }
+
+    public void setMemberToken(String memberToken) {
+        this.memberToken = memberToken;
     }
 
     public Double getLatitude() {

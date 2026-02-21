@@ -43,6 +43,7 @@ GroupDrive provides:
 * **Leader / Convoy Mode**: Displays distance to the group leader and warns users if they are falling behind (> 1km).
 * **Smart Stop Alerts**: Automatically notifies the entire group if a member has been stopped for more more than 3 minutes.
 * **Temporary Trip History**: Draws a dotted breadcrumb path showing the last 15 minutes of travel history for every active member.
+* **Lightweight Authentication**: Generates unique `memberToken` UUIDs stored in browser cache to validate WebSockets and prevent location spoofing.
 
 No app installation is required — it works directly in a mobile browser.
 

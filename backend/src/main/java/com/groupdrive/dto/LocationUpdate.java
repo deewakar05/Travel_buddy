@@ -4,6 +4,7 @@ public class LocationUpdate {
     private String groupId;
     private String memberId;
     private String memberName;
+    private String memberToken;
     private Double latitude;
     private Double longitude;
     private String status;
@@ -33,6 +34,14 @@ public class LocationUpdate {
 
     public void setMemberName(String memberName) {
         this.memberName = memberName;
+    }
+
+    public String getMemberToken() {
+        return memberToken;
+    }
+
+    public void setMemberToken(String memberToken) {
+        this.memberToken = memberToken;
     }
 
     public Double getLatitude() {

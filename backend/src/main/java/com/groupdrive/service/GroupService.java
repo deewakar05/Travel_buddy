@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 public class GroupService {
@@ -46,10 +47,12 @@ public class GroupService {
         adminMember.setName(request.getAdminName());
         adminMember.setRole("ADMIN");
         adminMember.setSharing(false);
+        String memberToken = UUID.randomUUID().toString();
+        adminMember.setMemberToken(memberToken);
 
         memberRepository.save(adminMember);
 
-        return new GroupResponse(groupId, group.getGroupName(), adminId, adminMember.getName());
+        return new GroupResponse(groupId, group.getGroupName(), adminId, adminMember.getName(), memberToken);
     }
 
     @Transactional
@@ -71,6 +74,8 @@ public class GroupService {
         member.setName(request.getMemberName());
         member.setRole("MEMBER");
         member.setSharing(false);
+        String memberToken = UUID.randomUUID().toString();
+        member.setMemberToken(memberToken);
 
         memberRepository.save(member);
 
@@ -79,6 +84,7 @@ public class GroupService {
                 group.getGroupName(),
                 memberId,
                 member.getName(),
-                member.getRole());
+                member.getRole(),
+                memberToken);
     }
 }

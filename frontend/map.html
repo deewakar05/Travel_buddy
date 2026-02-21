@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Live Map - GroupDrive</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            /* Prevent scrolling on map page */
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            z-index: 10;
+        }
+
+        /* Custom markers */
+        .custom-marker {
+            background-color: white;
+            border: 2px solid #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #1e3a8a;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .self-marker {
+            background-color: #3b82f6;
+            border: 2px solid white;
+            color: white;
+        }
+
+        /* Bottom Sheet panel for mobile */
+        .bottom-panel {
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out;
+            z-index: 40;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 h-screen w-screen flex flex-col selection:bg-blue-200 relative">
+
+    <!-- Top Floating Header -->
+    <header class="absolute top-0 left-0 right-0 z-40 p-4 pointer-events-none">
+        <div class="max-w-md mx-auto flex items-center justify-between gap-4 pointer-events-auto">
+
+            <div
+                class="bg-white/90 backdrop-blur-md shadow-lg rounded-2xl px-4 py-3 flex-grow flex flex-col border border-white/20">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 id="groupNameLabel" class="text-sm font-bold text-slate-900 leading-tight">Loading Trip...
+                        </h1>
+                        <p id="groupIdLabel" class="text-xs text-slate-500 font-mono">ID: ---</p>
+                    </div>
+                    <span id="roleBadge"
+                        class="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase rounded-md tracking-wider">MEMBER</span>
+                </div>
+            </div>
+
+            <!-- Share Button (Visible only to Admin/Route Planner usually, keeping visible for Beta) -->
+            <button onclick="copyGroupLink()"
+                class="bg-blue-600 shadow-lg shadow-blue-600/30 text-white p-3 rounded-2xl hover:bg-blue-700 transition-colors active:scale-95 flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+            </button>
+
+        </div>
+    </header>
+
+    <!-- The Map Container -->
+    <main class="flex-grow w-full h-full relative z-10">
+        <div id="map"></div>
+    </main>
+
+    <!-- Bottom Control Panel -->
+    <footer class="bottom-panel absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl border-t border-slate-200">
+        <div class="max-w-md mx-auto p-5 space-y-4">
+
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-slate-900" id="userNameLabel">My Status</h3>
+                    <p class="text-xs text-slate-500" id="statusLabel">Waiting for GPS...</p>
+                </div>
+
+                <!-- Toggle Switch for Location Sharing -->
+                <button id="toggleSharingBtn"
+                    class="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 bg-slate-300">
+                    <span id="toggleKnob"
+                        class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform translate-x-1 shadow-sm"></span>
+                </button>
+            </div>
+
+            <div class="flex gap-3 pt-2 border-t border-slate-100">
+                <button id="recenterBtn"
+                    class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    My Location
+                </button>
+                <button id="exitGroupBtn"
+                    class="py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Exit
+                </button>
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <!-- Application Logic modules to be implemented next -->
+    <script src="js/map.js"></script>
+    <script src="js/socket.js"></script>
+    <script src="js/gps.js"></script>
+
+</body>
+
+</html>
